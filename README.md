@@ -57,7 +57,26 @@ sysmon/
 
 ---
 
-## 🚀 Quick Start
+---
+
+## 🚀 How to Run
+
+For detailed, step-by-step instructions, see **[RUN_GUIDELINES.md](file:///home/blink/sysmon/RUN_GUIDELINES.md)**.
+
+### Quick Commands
+
+**Docker Compose:**
+```bash
+docker-compose up --build
+```
+
+**Kubernetes:**
+```bash
+kubectl apply -k k8s/
+kubectl port-forward svc/sysmon-frontend 8080:80 -n sysmon
+```
+
+---
 
 ### 1. PostgreSQL Database
 
