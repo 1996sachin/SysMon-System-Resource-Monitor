@@ -1,0 +1,46 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sysmon_db
+    environment:
+      POSTGRES_DB: sysmon_db
+      POSTGRES_USER: sysmon_user
+      POSTGRES_PASSWORD: sysmon_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U sysmon_user -d sysmon_db" ]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: sysmon_backend
+    network_mode: host
+    pid: host
+    privileged: true
+    environment:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5433"
+      DB_NAME: sysmon_db
+      DB_USER: sysmon_user
+      DB_PASSWORD: sysmon_pass
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: sysmon_frontend
+    ports:
+      - "3000:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

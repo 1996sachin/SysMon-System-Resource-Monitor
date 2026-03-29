@@ -1,0 +1,21 @@
+# Requires Prometheus Operator (e.g. kube-prometheus-stack Helm chart).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sysmon-backend
+  namespace: sysmon
+  labels:
+    # If your Prometheus Helm release only selects matching ServiceMonitors, set this
+    # to the same label (often release: <your-release-name>).
+    app.kubernetes.io/name: sysmon
+spec:
+  selector:
+    matchLabels:
+      app: sysmon-backend
+  namespaceSelector:
+    matchNames:
+      - sysmon
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

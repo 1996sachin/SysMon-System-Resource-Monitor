@@ -1,0 +1,38 @@
+version: '3.9'
+
+# Development override — hot reload for both frontend and backend
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+
+  db:
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/app       # mount source for live reload
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    environment:
+      DEBUG: "True"
+    command: >
+      sh -c "python manage.py makemigrations monitor --noinput &&
+             python manage.py migrate --noinput &&
+             daphne -b 0.0.0.0 -p 8000 sysmon.asgi:application"
+
+  frontend:
+    build:
+      context: ./frontend
+      target: builder        # use builder stage (node), not nginx
+    volumes:
+      - ./frontend/src:/app/src          # hot reload
+      - ./frontend/public:/app/public
+    ports:
+      - "3000:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_WS_URL=ws://localhost:8000/ws/monitor/
+    command: npm start

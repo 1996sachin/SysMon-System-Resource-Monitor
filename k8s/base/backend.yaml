@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sysmon-backend
+  namespace: sysmon
+  labels:
+    app: sysmon-backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+spec:
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+  selector:
+    app: sysmon-backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sysmon-backend
+  namespace: sysmon
+  labels:
+    app: sysmon-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sysmon-backend
+  template:
+    metadata:
+      labels:
+        app: sysmon-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: backend
+          # Build: docker build -t your-registry/sysmon-backend:latest ./backend
+          image: sysmon-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: DEBUG
+              value: "False"
+            - name: DB_HOST
+              value: postgres.sysmon.svc.cluster.local
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: sysmon-secrets
+                  key: database
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: sysmon-secrets
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sysmon-secrets
+                  key: password
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sysmon-secrets
+                  key: django-secret-key
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"

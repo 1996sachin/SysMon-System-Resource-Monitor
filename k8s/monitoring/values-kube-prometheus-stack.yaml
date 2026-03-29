@@ -1,0 +1,21 @@
+# Helm: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+# helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#   -n monitoring --create-namespace -f values-kube-prometheus-stack.yaml
+#
+# Prometheus discovers ServiceMonitors in all namespaces (needed for sysmon ServiceMonitor).
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+
+grafana:
+  adminPassword: change-me-on-install
+  persistence:
+    enabled: true
+    size: 10Gi
+  additionalDataSources:
+    - name: Prometheus
+      type: prometheus
+      url: http://kube-prometheus-stack-prometheus:9090
+      access: proxy
+      isDefault: true
